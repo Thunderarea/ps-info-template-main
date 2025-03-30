@@ -3,7 +3,6 @@ $("document").ready(function () {
   var totalQuestions = 0;
   var userAnswers = {};
   var all_questions;
-  var all_questions_en;
   var all_evidences;
   var all_evidences_en;
   var faq;
@@ -17,38 +16,19 @@ $("document").ready(function () {
 
   //Once the form begins, the questions' data and length are fetched.
   function getQuestions() {
-    return fetch("question-utils/all-questions.json")
+    return fetch(`question-utils/all-questions-${currentLanguage}.json`)
       .then((response) => response.json())
       .then((data) => {
         all_questions = data;
         totalQuestions = data.length;
-
-        // Fetch the second JSON file
-        return fetch("question-utils/all-questions-en.json")
-          .then((response) => response.json())
-          .then((dataEn) => {
-            all_questions_en = dataEn;
-          })
-          .catch((error) => {
-            console.error("Failed to fetch all-questions-en.json:", error);
-
-            // Show error message to the user
-            const errorMessage = document.createElement("div");
-            errorMessage.textContent =
-              "Error: Failed to fetch all-questions-en.json.";
-            $(".question-container").html(errorMessage);
-
-            hideFormBtns();
-          });
       })
       .catch((error) => {
-        console.error("Failed to fetch all-questions:", error);
+        console.error(`Failed to fetch all-questions-${currentLanguage}.json:`, error);
 
         // Show error message to the user
         const errorMessage = document.createElement("div");
-        errorMessage.textContent = "Error: Failed to fetch all-questions.json.";
+        errorMessage.textContent = `Error: Failed to fetch all-questions-${currentLanguage}.json.`;
         $(".question-container").html(errorMessage);
-
         hideFormBtns();
       });
   }
@@ -123,7 +103,7 @@ $("document").ready(function () {
 
   function getEvidencesById(id) {
     var selectedEvidence;
-    currentLanguage === "greek"
+    currentLanguage === "el"
       ? (selectedEvidence = all_evidences)
       : (selectedEvidence = all_evidences_en);
     selectedEvidence = selectedEvidence.PublicService.evidence.find(
@@ -151,9 +131,9 @@ $("document").ready(function () {
   }
 
   function loadFaqs() {
-    var faqData = currentLanguage === "greek" ? faq : faq_en;
+    var faqData = currentLanguage === "el" ? faq : faq_en;
     var faqTitle =
-      currentLanguage === "greek"
+      currentLanguage === "el"
         ? "Συχνές Ερωτήσεις"
         : "Frequently Asked Questions";
 
@@ -210,9 +190,8 @@ $("document").ready(function () {
       $("#backButton").show();
     } 
 
-    currentLanguage === "greek"
-      ? (question = all_questions[questionId])
-      : (question = all_questions_en[questionId]);
+    question = all_questions[questionId];
+
     var questionElement = document.createElement("div");
 
     //If the user has answered the question (checked a value), no error occurs. Otherwise you get an error (meaning that user needs to answer before he continues to the next question)!
@@ -278,7 +257,7 @@ $("document").ready(function () {
 
       //The reason for manually updating the components of the <<error>> questionElement is because the
       //querySelectorAll method works on elements that are already in the DOM (Document Object Model)
-      if (currentLanguage === "english") {
+      if (currentLanguage === "en") {
         // Manually update the english format of the last 4 text elements in change-language.js
         //chooseAnswer: "Choose your answer",
         //oneAnswer: "You can choose only one option.",
@@ -299,9 +278,10 @@ $("document").ready(function () {
   }
 
   function skipToEnd(message) {
+    currentQuestion = -1;
     const errorEnd = document.createElement("h5");
     const error =
-      currentLanguage === "greek"
+      currentLanguage === "el"
         ? "Λυπούμαστε αλλά δεν δικαιούστε το δελτίο μετακίνησης ΑΜΕΑ!"
         : "We are sorry but you are not entitled to the transportation card for the disabled!";
     errorEnd.className = "govgr-error-summary";
@@ -318,7 +298,7 @@ $("document").ready(function () {
 
   function retrieveAnswers() {
     var allAnswers = [];
-    // currentLanguage === "greek" ? result = "Πρέπει να υποβάλετε id1": result = "You must submit id1";
+    // currentLanguage === "el" ? result = "Πρέπει να υποβάλετε id1": result = "You must submit id1";
 
     getEvidencesById(1);
     for (var i = 0; i < totalQuestions; i++) {
@@ -345,7 +325,7 @@ $("document").ready(function () {
       (allAnswers[5] === "2")
     ) {
       getEvidencesById(10);
-      currentLanguage === "greek"
+      currentLanguage === "el"
         ? setResult("Δικαιούται και ο συνοδός το ίδιο δελτίο μετακίνησης.")
         : setResult("The companion is also entitled with the same transportation card.");
     }
@@ -359,7 +339,7 @@ $("document").ready(function () {
     }
     if (allAnswers[7] === "1") {
       getEvidencesById(12);
-      currentLanguage === "greek"
+      currentLanguage === "el"
       ? setResult(
           "Δικαιούστε έκπτωση 50% για τις εκτός ορίων της περιφέρειας σας μετακινήσεις με υπεραστικά ΚΤΕΛ."
         )
@@ -369,7 +349,7 @@ $("document").ready(function () {
     } else if (allAnswers[7] === "2" && allAnswers[5] !== "1") {
       getEvidencesById(2);
       if (allAnswers[8] === "1") {
-        currentLanguage === "greek"
+        currentLanguage === "el"
           ? setResult(
               "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
             )
@@ -377,7 +357,7 @@ $("document").ready(function () {
               "You are entitled to free transportation with the urban public bus of your region and a 50% discount for transportation outside the boundaries of your region with long-distance (intercity) bus services (named KTEL)."
             );
       } else if (allAnswers[8] === "2") {
-        currentLanguage === "greek"
+        currentLanguage === "el"
           ? setResult(
               "Δικαιούσαι έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
             )
@@ -387,7 +367,7 @@ $("document").ready(function () {
       }
     }
     else if(allAnswers[7] === "2" && allAnswers[5] === "1"){
-      currentLanguage === "greek"
+      currentLanguage === "el"
       ? setResult(
           "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
         )
@@ -400,7 +380,7 @@ $("document").ready(function () {
   function submitForm() {
     const resultWrapper = document.createElement("div");
     const titleText =
-      currentLanguage === "greek"
+      currentLanguage === "el"
         ? "Είστε δικαιούχος!"
         : "You are eligible!";
     resultWrapper.innerHTML = `<h1 class='answer'>${titleText}</h1>`;
@@ -409,7 +389,7 @@ $("document").ready(function () {
     
     const evidenceListElement = document.createElement("ol");
     evidenceListElement.setAttribute("id", "evidences");
-    currentLanguage === "greek"
+    currentLanguage === "el"
       ? $(".question-container").append(
           "<br /><br /><h5 class='answer'>Τα δικαιολογητικά που πρέπει να προσκομίσετε για να λάβετε το δελτίο μετακίνησης είναι τα εξής:</h5><br />"
         )
@@ -424,19 +404,19 @@ $("document").ready(function () {
 
   $("#nextQuestion").click(function () {
     if ($(".govgr-radios__input").is(":checked")) {
-      var selectedRadioButtonIndex =
+      let selectedOptionIndex =
         $('input[name="question-option"]').index(
           $('input[name="question-option"]:checked')
         );
 
-      if ("skipToEnd" in all_questions[currentQuestion].options[selectedRadioButtonIndex]) {
-        skipToEnd(all_questions[currentQuestion].options[selectedRadioButtonIndex].skipToEnd);
+      if ("skipToEnd" in all_questions[currentQuestion].options[selectedOptionIndex]) {
+        skipToEnd(all_questions[currentQuestion].options[selectedOptionIndex].skipToEnd);
       } else {
-        //save selectedRadioButtonIndex to the storage
-        userAnswers[currentQuestion] = selectedRadioButtonIndex;
+        //save selectedOptionIndex to the storage
+        userAnswers[currentQuestion] = selectedOptionIndex;
         sessionStorage.setItem(
           "answer_" + currentQuestion,
-          selectedRadioButtonIndex
+          selectedOptionIndex
         ); // save answer to session storage
 
         //if the questions are finished then...
@@ -449,7 +429,7 @@ $("document").ready(function () {
           loadQuestion(currentQuestion, true);
 
           if (currentQuestion + 1 == totalQuestions) {
-            currentLanguage === "greek"
+            currentLanguage === "el"
               ? $(this).text("Υποβολή")
               : $(this).text("Submit");
           }

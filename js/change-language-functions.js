@@ -1,5 +1,5 @@
 var languageContent = {
-    greek: {
+    el: {
       languageBtn: "EL",
       mainTitle: "Δελτίο Μετακίνησης ΑΜΕΑ",
       pageTitle: "Δελτίο Μετακίνησης ΑΜΕΑ",
@@ -24,7 +24,7 @@ var languageContent = {
       errorAn: "Λάθος:",
       choose: "Πρέπει να επιλέξετε μια απάντηση",
     },
-    english: {
+    en: {
       languageBtn: "EN",
       mainTitle: "Transportation Card for the Disabled",
       pageTitle: "Transportation Card for the Disabled",
@@ -51,11 +51,16 @@ var languageContent = {
     }
 };
   
-// Retrieve the selected language from localStorage or set default to "greek"
-var currentLanguage = localStorage.getItem("preferredLanguage") || "greek";
+// Retrieve the selected language from localStorage or set default to "el"
+var currentLanguage = "el";
+let storedLang = localStorage.getItem("preferredLanguage");
+if (storedLang && languageContent[storedLang]) {
+    currentLanguage = storedLang;
+}
+localStorage.setItem("preferredLanguage", currentLanguage);
 
 function toggleLanguage() {
-    currentLanguage = currentLanguage === "greek" ? "english" : "greek";
+    currentLanguage = currentLanguage === "el" ? "en" : "el";
     localStorage.setItem("preferredLanguage", currentLanguage);
     updateContent();
 }
