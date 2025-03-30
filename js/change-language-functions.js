@@ -1,9 +1,9 @@
 var languageContent = {
     el: {
       languageBtn: "EL",
-      mainTitle: "Δελτίο Μετακίνησης ΑΜΕΑ",
-      pageTitle: "Δελτίο Μετακίνησης ΑΜΕΑ",
-      infoTitle: "Πληροφορίες για την χορήγηση Δελτίων Μετακίνησης ΑΜΕΑ 2023",
+      mainTitle: "Δελτίο Μετακίνησης ΑΜΕΑ1",
+      pageTitle: "Δελτίο Μετακίνησης ΑΜΕΑ1",
+      infoTitle: "Πληροφορίες για την χορήγηση Δελτίων Μετακίνησης ΑΜΕΑ 2025",
       subTitle1: "Αυτό το ερωτηματολόγιο μπορεί να σας βοηθήσει να βρείτε αν δικαιούστε να λάβετε το δελτίο μετακίνησης ΑΜΕΑ.",
       subTitle2: "H συμπλήρωση του ερωτηματολογίου δεν απαιτεί παραπάνω από 10 λεπτά.",
       subTitle3: "Δεν θα αποθηκεύσουμε ούτε θα μοιραστούμε τις απαντήσεις σας.",
@@ -72,6 +72,7 @@ function updateContent() {
         var componentName = component.dataset.component;
         component.textContent = languageContent[currentLanguage][componentName];
     });
+    start();
 }
 
 // Initialize the content based on the selected language

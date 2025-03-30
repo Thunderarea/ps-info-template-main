@@ -1,154 +1,114 @@
-$("document").ready(function () {
-  var currentQuestion = 0;
-  var totalQuestions = 0;
-  var userAnswers = {};
-  var all_questions = {};
-  var questionIds = [];
-  var all_evidences;
-  var all_evidences_en;
-  var faq;
-  var faq_en;
+var currentQuestion = 0;
+var totalQuestions = 0;
+var userAnswers = {};
+var all_questions = {};
+var questionIds = [];
+var all_evidences;
+var faq;
+var texts = {};
 
-  //hide the form buttons when its necessary
-  function hideFormBtns() {
-    $("#nextQuestion").hide();
-    $("#backButton").hide();
-  }
+//hide the form buttons when its necessary
+function hideFormBtns() {
+  $("#nextQuestion").hide();
+  $("#backButton").hide();
+}
 
-  //Once the form begins, the questions' data and length are fetched.
-  function getQuestions() {
-    return fetch(`question-utils/all-questions-${currentLanguage}.json`)
-      .then((response) => response.json())
-      .then((data) => {
-        data.forEach((question) => {
-          all_questions[question.id] = question;
-          questionIds.push(question.id);
-        });
-        totalQuestions = questionIds.length;
-      })
-      .catch((error) => {
-        console.error(`Failed to fetch all-questions-${currentLanguage}.json:`, error);
+function getTexts() {
+  return fetch(`question-utils/texts-${currentLanguage}.json`)
+    .then((response) => response.json())
+    .then((data) => {
+      texts = data;
+    })
+    .catch((error) => {
+      showFileFetchError(`texts-${currentLanguage}.json`, error);
+    });
+}
 
-        // Show error message to the user
-        const errorMessage = document.createElement("div");
-        errorMessage.textContent = `Error: Failed to fetch all-questions-${currentLanguage}.json.`;
-        $(".question-container").html(errorMessage);
-        hideFormBtns();
+//Once the form begins, the questions' data and length are fetched.
+function getQuestions() {
+  return fetch(`question-utils/all-questions-${currentLanguage}.json`)
+    .then((response) => response.json())
+    .then((data) => {
+      data.forEach((question) => {
+        all_questions[question.id] = question;
+        questionIds.push(question.id);
       });
+      totalQuestions = questionIds.length;
+    })
+    .catch((error) => {
+      showFileFetchError(`all-questions-${currentLanguage}.json`, error);
+    });
+}
+
+//Once the form begins, the evidences' data and length are fetched.
+function getEvidences() {
+  return fetch(`question-utils/cpsv-${currentLanguage}.json`)
+    .then((response) => response.json())
+    .then((data) => {
+      all_evidences = data;
+      totalEvidences = data.length;
+    })
+    .catch((error) => {
+      showFileFetchError(`cpsv-${currentLanguage}.json`, error);
+    });
+}
+
+async function getResultMessages() {
+  try {
+    const response = await fetch(`question-utils/result-messages-${currentLanguage}.json`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    showFileFetchError(`result-messages-${currentLanguage}.json`, error);
   }
+}
 
-  //Once the form begins, the evidences' data and length are fetched.
-  function getEvidences() {
-    return fetch("question-utils/cpsv.json")
-      .then((response) => response.json())
-      .then((data) => {
-        all_evidences = data;
-        totalEvidences = data.length;
+//Once the form begins, the faqs' data is fetched.
+function getFaq() {
+  return fetch(`question-utils/faq-${currentLanguage}.json`)
+    .then((response) => response.json())
+    .then((data) => {
+      faq = data;
+      totalFaq = data.length;
+    })
+    .catch((error) => {
+      showFileFetchError(`faq-${currentLanguage}.json`, error, false);
+    });
+}
 
-        // Fetch the second JSON file
-        return fetch("question-utils/cpsv-en.json")
-          .then((response) => response.json())
-          .then((dataEn) => {
-            all_evidences_en = dataEn;
-          })
-          .catch((error) => {
-            console.error("Failed to fetch cpsv-en:", error);
+function showFileFetchError(fileName, error, hideBtns = true) {
+  console.error(`Failed to fetch ${fileName}:`, error);
+  // Show error message to the user
+  const errorMessage = document.createElement("div");
+  errorMessage.textContent = `Error: Failed to fetch ${fileName}.`;
+  $(".question-container").html(errorMessage);
+  hideBtns && hideFormBtns();
+}
 
-            // Show error message to the user
-            const errorMessage = document.createElement("div");
-            errorMessage.textContent = "Error: Failed to fetch cpsv-en.json.";
-            $(".question-container").html(errorMessage);
+//text added in the final result
+function setResult(text) {
+  const resultWrapper = document.getElementById("resultWrapper");
+  const result = document.createElement("h5");
+  result.textContent = text;
+  resultWrapper.appendChild(result);
+}
 
-            hideFormBtns();
-          });
-      })
-      .catch((error) => {
-        console.error("Failed to fetch cpsv:", error);
+function loadFaqs() {
+  var faqElement = document.createElement("div");
 
-        // Show error message to the user
-        const errorMessage = document.createElement("div");
-        errorMessage.textContent = "Error: Failed to fetch cpsv.json.";
-        $(".question-container").html(errorMessage);
-
-        hideFormBtns();
-      });
-  }
-
-  //Once the form begins, the faqs' data is fetched.
-  function getFaq() {
-    return fetch("question-utils/faq.json")
-      .then((response) => response.json())
-      .then((data) => {
-        faq = data;
-        totalFaq = data.length;
-
-        // Fetch the second JSON file
-        return fetch("question-utils/faq-en.json")
-          .then((response) => response.json())
-          .then((dataEn) => {
-            faq_en = dataEn;
-          })
-          .catch((error) => {
-            console.error("Failed to fetch faq-en:", error);
-            // Show error message to the user
-            const errorMessage = document.createElement("div");
-            errorMessage.textContent = "Error: Failed to fetch faq-en.json.";
-            $(".question-container").html(errorMessage);
-          });
-      })
-      .catch((error) => {
-        console.error("Failed to fetch faq:", error);
-        // Show error message to the user
-        const errorMessage = document.createElement("div");
-        errorMessage.textContent = "Error: Failed to fetch faq.json.";
-        $(".question-container").html(errorMessage);
-      });
-  }
-
-  function getEvidencesById(id) {
-    var selectedEvidence;
-    currentLanguage === "el" ? (selectedEvidence = all_evidences) : (selectedEvidence = all_evidences_en);
-    selectedEvidence = selectedEvidence.PublicService.evidence.find((evidence) => evidence.id === id);
-
-    if (selectedEvidence) {
-      const evidenceListElement = document.getElementById("evidences");
-      selectedEvidence.evs.forEach((evsItem) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = evsItem.name;
-        evidenceListElement.appendChild(listItem);
-      });
-    } else {
-      console.log(`Evidence with ID '${givenEvidenceID}' not found.`);
-    }
-  }
-
-  //text added in the final result
-  function setResult(text) {
-    const resultWrapper = document.getElementById("resultWrapper");
-    const result = document.createElement("h5");
-    result.textContent = text;
-    resultWrapper.appendChild(result);
-  }
-
-  function loadFaqs() {
-    var faqData = currentLanguage === "el" ? faq : faq_en;
-    var faqTitle = currentLanguage === "el" ? "Συχνές Ερωτήσεις" : "Frequently Asked Questions";
-
-    var faqElement = document.createElement("div");
-
-    faqElement.innerHTML = `
+  faqElement.innerHTML = `
         <div class="govgr-heading-m language-component" data-component="faq" tabIndex="15">
-          ${faqTitle}
+          ${texts.faqTitle}
         </div>
     `;
 
-    var ft = 16;
-    faqData.forEach((faqItem) => {
-      var faqSection = document.createElement("details");
-      faqSection.className = "govgr-accordion__section";
-      faqSection.tabIndex = ft;
+  var ft = 16;
+  faq.forEach((faqItem) => {
+    var faqSection = document.createElement("details");
+    faqSection.className = "govgr-accordion__section";
+    faqSection.tabIndex = ft;
 
-      faqSection.innerHTML = `
+    faqSection.innerHTML = `
         <summary class="govgr-accordion__section-summary">
           <h2 class="govgr-accordion__section-heading">
             <span class="govgr-accordion__section-button">
@@ -163,30 +123,30 @@ $("document").ready(function () {
         </div>
       `;
 
-      faqElement.appendChild(faqSection);
-      ft++;
-    });
+    faqElement.appendChild(faqSection);
+    ft++;
+  });
 
-    $(".faqContainer").html(faqElement);
+  $(".faqContainer").html(faqElement);
+}
+
+// get the url from faqs and link it
+function convertURLsToLinks(text) {
+  return text.replace(/https:\/\/www\.gov\.gr\/[\S]+/g, '<a href="$&" target="_blank">' + "myKEPlive" + "</a>" + ".");
+}
+
+//Εachtime back/next buttons are pressed the form loads a question
+function loadQuestion(noError) {
+  $("#nextQuestion").show();
+  if (currentQuestion > 0) {
+    $("#backButton").show();
   }
 
-  // get the url from faqs and link it
-  function convertURLsToLinks(text) {
-    return text.replace(/https:\/\/www\.gov\.gr\/[\S]+/g, '<a href="$&" target="_blank">' + "myKEPlive" + "</a>" + ".");
-  }
+  question = all_questions[questionIds[currentQuestion]];
 
-  //Εachtime back/next buttons are pressed the form loads a question
-  function loadQuestion(noError) {
-    $("#nextQuestion").show();
-    if (currentQuestion > 0) {
-      $("#backButton").show();
-    }
+  var questionElement = document.createElement("div");
 
-    question = all_questions[questionIds[currentQuestion]];
-
-    var questionElement = document.createElement("div");
-
-    const optionsHTML = `
+  const optionsHTML = `
       ${question.options
         .map(
           (option, index) => `
@@ -201,9 +161,9 @@ $("document").ready(function () {
         .join("")}
     `;
 
-    //If the user has answered the question (checked a value), no error occurs. Otherwise you get an error (meaning that user needs to answer before he continues to the next question)!
-    if (noError) {
-      questionElement.innerHTML = `
+  //If the user has answered the question (checked a value), no error occurs. Otherwise you get an error (meaning that user needs to answer before he continues to the next question)!
+  if (noError) {
+    questionElement.innerHTML = `
                 <div class='govgr-field'>
                     <fieldset class='govgr-fieldset' aria-describedby='radio-country'>
                         <legend role='heading' aria-level='1' class='govgr-fieldset__legend govgr-heading-l'>
@@ -217,8 +177,8 @@ $("document").ready(function () {
                     </fieldset>
                 </div>
             `;
-    } else {
-      questionElement.innerHTML = `
+  } else {
+    questionElement.innerHTML = `
             <div class='govgr-field govgr-field__error' id='$id-error'>
             <legend role='heading' aria-level='1' class='govgr-fieldset__legend govgr-heading-l'>
                         ${question.question}
@@ -239,138 +199,124 @@ $("document").ready(function () {
             </div>
         `;
 
-      //The reason for manually updating the components of the <<error>> questionElement is because the
-      //querySelectorAll method works on elements that are already in the DOM (Document Object Model)
-      if (currentLanguage === "en") {
-        // Manually update the english format of the last 4 text elements in change-language.js
-        //chooseAnswer: "Choose your answer",
-        //oneAnswer: "You can choose only one option.",
-        //errorAn: "Error:",
-        //choose: "You must choose one option"
-        var components = Array.from(questionElement.querySelectorAll(".language-component"));
-        components.slice(-4).forEach(function (component) {
-          var componentName = component.dataset.component;
-          component.textContent = languageContent[currentLanguage][componentName];
-        });
-      }
+    //The reason for manually updating the components of the <<error>> questionElement is because the
+    //querySelectorAll method works on elements that are already in the DOM (Document Object Model)
+    if (currentLanguage === "en") {
+      // Manually update the english format of the last 4 text elements in change-language.js
+      //chooseAnswer: "Choose your answer",
+      //oneAnswer: "You can choose only one option.",
+      //errorAn: "Error:",
+      //choose: "You must choose one option"
+      var components = Array.from(questionElement.querySelectorAll(".language-component"));
+      components.slice(-4).forEach(function (component) {
+        var componentName = component.dataset.component;
+        component.textContent = languageContent[currentLanguage][componentName];
+      });
     }
-
-    $(".question-container").html(questionElement);
   }
 
-  function skipToEnd(message) {
-    currentQuestion = -1;
-    const errorEnd = document.createElement("h5");
-    const error =
-      currentLanguage === "el"
-        ? "Λυπούμαστε αλλά δεν δικαιούστε το δελτίο μετακίνησης ΑΜΕΑ!"
-        : "We are sorry but you are not entitled to the transportation card for the disabled!";
-    errorEnd.className = "govgr-error-summary";
-    errorEnd.textContent = error + " " + message;
-    $(".question-container").html(errorEnd);
-    hideFormBtns();
-  }
+  $(".question-container").html(questionElement);
+}
 
+function skipToEnd(message) {
+  currentQuestion = -1;
+  const errorEnd = document.createElement("h5");
+  errorEnd.className = "govgr-error-summary";
+  errorEnd.textContent = texts.rejectionMessage + " " + message;
+  $(".question-container").html(errorEnd);
+  hideFormBtns();
+}
+
+function addEvidence(selectedEvidence) {
+  const evidenceListElement = document.getElementById("evidences");
+  selectedEvidence.evs.forEach((evsItem) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = evsItem.name;
+    evidenceListElement.appendChild(listItem);
+  });
+}
+
+function conditionsAreMet(item, allAnswers) {
+  return item.conditions.some((group) =>
+    group.every((condition) => {
+      const userAnswer = allAnswers[condition.question];
+      const matches = condition.answer.includes(userAnswer);
+      return condition.should ? matches : !matches;
+    })
+  );
+}
+
+function collectResults() {
+  let allAnswers = {};
+
+  questionIds.forEach((questionId) => {
+    let optionIndex = sessionStorage.getItem(questionId);
+    allAnswers[questionId] = parseInt(optionIndex);
+  });
+  console.log(allAnswers);
+
+  collectEvidences(allAnswers);
+  collectResultMessages(allAnswers);
+}
+
+function collectEvidences(allAnswers) {
+  all_evidences.forEach((evidence) => {
+    if ("conditions" in evidence) {
+      conditionsAreMet(evidence, allAnswers) && addEvidence(evidence);
+    } else addEvidence(evidence);
+  });
+}
+
+async function collectResultMessages(allAnswers) {
+  const messages = await getResultMessages();
+  messages.forEach((message) => {
+    if ("conditions" in message) {
+      conditionsAreMet(message, allAnswers) && setResult(message.text);
+    } else setResult(message.text);
+  });
+}
+
+function submitForm() {
+  const resultWrapper = document.createElement("div");
+  resultWrapper.innerHTML = `<h1 class='answer'>${texts.eligibleMessage}</h1>`;
+  resultWrapper.setAttribute("id", "resultWrapper");
+  $(".question-container").html(resultWrapper);
+
+  const evidenceListElement = document.createElement("ol");
+  evidenceListElement.setAttribute("id", "evidences");
+  $(".question-container").append(`<br /><br /><h5 class='answer'>${texts.evidencesTitle}</h5><br />`);
+  $(".question-container").append(evidenceListElement);
+  $("#faqContainer").load("faq.html");
+  collectResults();
+  hideFormBtns();
+}
+
+function start() {
+  // Get text
+  getTexts().then(() => {
+    // Get all questions
+    getQuestions().then(() => {
+      // Get all evidences
+      getEvidences().then(() => {
+        // Get all faqs
+        getFaq().then(() => {
+          // Code inside this block executes only after all data is fetched
+          // load  faqs and the first question on page load
+          loadFaqs();
+          $("#faqContainer").show();
+          loadQuestion(true);
+        });
+      });
+    });
+  });
+}
+
+$("document").ready(function () {
   $("#startBtn").click(function () {
     $("#intro").html("");
     $("#languageBtn").hide();
     $("#questions-btns").show();
   });
-
-  function retrieveAnswers() {
-    var allAnswers = [];
-    // currentLanguage === "el" ? result = "Πρέπει να υποβάλετε id1": result = "You must submit id1";
-
-    getEvidencesById(1);
-    for (var i = 0; i < totalQuestions; i++) {
-      var answer = sessionStorage.getItem("answer_" + i);
-      allAnswers.push(answer + 1);
-    }
-    console.log(allAnswers);
-
-    if (allAnswers[0] === "2") {
-      getEvidencesById(9);
-    }
-    if (allAnswers[2] === "4") {
-      getEvidencesById(11);
-    }
-    if (allAnswers[4] === "1") {
-      getEvidencesById(6);
-    } else if (allAnswers[4] === "2") {
-      getEvidencesById(7);
-    } else if (allAnswers[4] === "3") {
-      getEvidencesById(8);
-    }
-    if (allAnswers[5] === "1" || allAnswers[5] === "2") {
-      getEvidencesById(10);
-      currentLanguage === "el"
-        ? setResult("Δικαιούται και ο συνοδός το ίδιο δελτίο μετακίνησης.")
-        : setResult("The companion is also entitled with the same transportation card.");
-    }
-
-    if (allAnswers[6] === "2") {
-      getEvidencesById(3);
-      getEvidencesById(4);
-    } else if (allAnswers[6] === "3") {
-      getEvidencesById(3);
-      getEvidencesById(5);
-    }
-    if (allAnswers[7] === "1") {
-      getEvidencesById(12);
-      currentLanguage === "el"
-        ? setResult("Δικαιούστε έκπτωση 50% για τις εκτός ορίων της περιφέρειας σας μετακινήσεις με υπεραστικά ΚΤΕΛ.")
-        : setResult(
-            "You are entitled to a 50% discount for transportation outside the boundaries of your region with long-distance bus services (named KTEL)."
-          );
-    } else if (allAnswers[7] === "2" && allAnswers[5] !== "1") {
-      getEvidencesById(2);
-      if (allAnswers[8] === "1") {
-        currentLanguage === "el"
-          ? setResult(
-              "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
-            )
-          : setResult(
-              "You are entitled to free transportation with the urban public bus of your region and a 50% discount for transportation outside the boundaries of your region with long-distance (intercity) bus services (named KTEL)."
-            );
-      } else if (allAnswers[8] === "2") {
-        currentLanguage === "el"
-          ? setResult("Δικαιούσαι έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ.")
-          : setResult(
-              "You are entitled to a 50% discount for transportation outside the boundaries of your region with long-distance bus services (named KTEL)."
-            );
-      }
-    } else if (allAnswers[7] === "2" && allAnswers[5] === "1") {
-      currentLanguage === "el"
-        ? setResult(
-            "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
-          )
-        : setResult(
-            "You are entitled to free transportation with the urban public bus of your region and a 50% discount for transportation outside the boundaries of your region with long-distance (intercity) bus services (named KTEL)."
-          );
-    }
-  }
-
-  function submitForm() {
-    const resultWrapper = document.createElement("div");
-    const titleText = currentLanguage === "el" ? "Είστε δικαιούχος!" : "You are eligible!";
-    resultWrapper.innerHTML = `<h1 class='answer'>${titleText}</h1>`;
-    resultWrapper.setAttribute("id", "resultWrapper");
-    $(".question-container").html(resultWrapper);
-
-    const evidenceListElement = document.createElement("ol");
-    evidenceListElement.setAttribute("id", "evidences");
-    currentLanguage === "el"
-      ? $(".question-container").append(
-          "<br /><br /><h5 class='answer'>Τα δικαιολογητικά που πρέπει να προσκομίσετε για να λάβετε το δελτίο μετακίνησης είναι τα εξής:</h5><br />"
-        )
-      : $(".question-container").append(
-          "<br /><br /><h5 class='answer'>The documents you need to provide in order to receive your transportation card are the following:</h5><br />"
-        );
-    $(".question-container").append(evidenceListElement);
-    $("#faqContainer").load("faq.html");
-    retrieveAnswers();
-    hideFormBtns();
-  }
 
   $("#nextQuestion").click(function () {
     if ($(".govgr-radios__input").is(":checked")) {
@@ -381,7 +327,7 @@ $("document").ready(function () {
       } else {
         //save selectedOptionIndex to the storage
         userAnswers[currentQuestion] = selectedOptionIndex;
-        sessionStorage.setItem("answer_" + currentQuestion, selectedOptionIndex); // save answer to session storage
+        sessionStorage.setItem(questionIds[currentQuestion], selectedOptionIndex); // save answer to session storage
 
         //if the questions are finished then...
         if (currentQuestion + 1 == totalQuestions) {
@@ -393,7 +339,7 @@ $("document").ready(function () {
           loadQuestion(true);
 
           if (currentQuestion + 1 == totalQuestions) {
-            currentLanguage === "el" ? $(this).text("Υποβολή") : $(this).text("Submit");
+            $(this).text(texts.submit);
           }
         }
       }
@@ -408,9 +354,9 @@ $("document").ready(function () {
       loadQuestion(true);
 
       // Retrieve the answer for the previous question from userAnswers
-      var answer = userAnswers[currentQuestion];
-      if (answer) {
-        $('input[name="question-option"][value="' + answer + '"]').prop("checked", true);
+      let answer = userAnswers[currentQuestion];
+      if (answer > -1) {
+        $('input[name="question-option"]').eq(answer).prop("checked", true);
       }
     }
   });
@@ -424,18 +370,5 @@ $("document").ready(function () {
 
   $("#questions-btns").hide();
 
-  // Get all questions
-  getQuestions().then(() => {
-    // Get all evidences
-    getEvidences().then(() => {
-      // Get all faqs
-      getFaq().then(() => {
-        // Code inside this block executes only after all data is fetched
-        // load  faqs and the first question on page load
-        loadFaqs();
-        $("#faqContainer").show();
-        loadQuestion(true);
-      });
-    });
-  });
+  start();
 });
