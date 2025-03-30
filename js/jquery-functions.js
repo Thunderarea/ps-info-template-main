@@ -230,8 +230,8 @@ $("document").ready(function () {
                                     (option, index) => `
                                     <div class='govgr-radios__item'>
                                         <label class='govgr-label govgr-radios__label'>
-                                            ${option}
-                                            <input class='govgr-radios__input' type='radio' name='question-option' value='${option}' />
+                                            ${option.text}
+                                            <input class='govgr-radios__input' type='radio' name='question-option' value='${option.text}' />
                                         </label>
                                     </div>
                                 `
@@ -264,8 +264,8 @@ $("document").ready(function () {
                                 (option, index) => `
                                 <div class='govgr-radios__item'>
                                     <label class='govgr-label govgr-radios__label'>
-                                        ${option}
-                                        <input class='govgr-radios__input' type='radio' name='question-option' value='${option}' />
+                                        ${option.text}
+                                        <input class='govgr-radios__input' type='radio' name='question-option' value='${option.text}' />
                                     </label>
                                 </div>
                             `
@@ -323,8 +323,10 @@ $("document").ready(function () {
     getEvidencesById(1);
     for (var i = 0; i < totalQuestions; i++) {
       var answer = sessionStorage.getItem("answer_" + i);
-      allAnswers.push(answer);
+      allAnswers.push(answer+1);
     }
+    console.log(allAnswers);
+    
     if (allAnswers[0] === "2") {
       getEvidencesById(9);
     }
@@ -425,17 +427,10 @@ $("document").ready(function () {
       var selectedRadioButtonIndex =
         $('input[name="question-option"]').index(
           $('input[name="question-option"]:checked')
-        ) + 1;
-      console.log(selectedRadioButtonIndex);
-      if (currentQuestion === 0 && selectedRadioButtonIndex === 3) {
-        currentQuestion = -1;
-        currentLanguage === "greek" ? skipToEnd("Μπορείτε να το εκδώσετε ξανά μόνο μια φορά μετά από απώλεια.") : skipToEnd("You can reissue it only one time after loss.");
-      } else if (currentQuestion === 1 && selectedRadioButtonIndex === 2) {
-        currentQuestion = -1;
-        currentLanguage === "greek" ? skipToEnd("Πρέπει να είστε μόνιμος και νόμιμος κάτοικος της Ελλάδας.") : skipToEnd("You must be permanent and legal resident of Greece.");
-      } else if (currentQuestion === 3 && selectedRadioButtonIndex === 2) {
-        currentQuestion = -1;
-        currentLanguage === "greek" ? skipToEnd("Πρέπει να έχετε ποσοστό αναπηρίας 67% και άνω ή να είστε δικαιούχος του επιδόματος ΟΠΕΚΑ.") : skipToEnd("You must have a disability rate of 67% or more or be a beneficiary of the OPEKA benefit.");
+        );
+
+      if ("skipToEnd" in all_questions[currentQuestion].options[selectedRadioButtonIndex]) {
+        skipToEnd(all_questions[currentQuestion].options[selectedRadioButtonIndex].skipToEnd);
       } else {
         //save selectedRadioButtonIndex to the storage
         userAnswers[currentQuestion] = selectedRadioButtonIndex;
