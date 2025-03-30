@@ -107,12 +107,8 @@ $("document").ready(function () {
 
   function getEvidencesById(id) {
     var selectedEvidence;
-    currentLanguage === "el"
-      ? (selectedEvidence = all_evidences)
-      : (selectedEvidence = all_evidences_en);
-    selectedEvidence = selectedEvidence.PublicService.evidence.find(
-      (evidence) => evidence.id === id
-    );
+    currentLanguage === "el" ? (selectedEvidence = all_evidences) : (selectedEvidence = all_evidences_en);
+    selectedEvidence = selectedEvidence.PublicService.evidence.find((evidence) => evidence.id === id);
 
     if (selectedEvidence) {
       const evidenceListElement = document.getElementById("evidences");
@@ -136,10 +132,7 @@ $("document").ready(function () {
 
   function loadFaqs() {
     var faqData = currentLanguage === "el" ? faq : faq_en;
-    var faqTitle =
-      currentLanguage === "el"
-        ? "Συχνές Ερωτήσεις"
-        : "Frequently Asked Questions";
+    var faqTitle = currentLanguage === "el" ? "Συχνές Ερωτήσεις" : "Frequently Asked Questions";
 
     var faqElement = document.createElement("div");
 
@@ -179,24 +172,34 @@ $("document").ready(function () {
 
   // get the url from faqs and link it
   function convertURLsToLinks(text) {
-    return text.replace(
-      /https:\/\/www\.gov\.gr\/[\S]+/g,
-      '<a href="$&" target="_blank">' + "myKEPlive" + "</a>" + "."
-    );
+    return text.replace(/https:\/\/www\.gov\.gr\/[\S]+/g, '<a href="$&" target="_blank">' + "myKEPlive" + "</a>" + ".");
   }
-
 
   //Εachtime back/next buttons are pressed the form loads a question
   function loadQuestion(noError) {
-    
     $("#nextQuestion").show();
     if (currentQuestion > 0) {
       $("#backButton").show();
-    } 
+    }
 
     question = all_questions[questionIds[currentQuestion]];
 
     var questionElement = document.createElement("div");
+
+    const optionsHTML = `
+      ${question.options
+        .map(
+          (option, index) => `
+            <div class='govgr-radios__item'>
+                <label class='govgr-label govgr-radios__label'>
+                    ${option.text}
+                    <input class='govgr-radios__input' type='radio' name='question-option' value='${option.text}' />
+                </label>
+            </div>
+          `
+        )
+        .join("")}
+    `;
 
     //If the user has answered the question (checked a value), no error occurs. Otherwise you get an error (meaning that user needs to answer before he continues to the next question)!
     if (noError) {
@@ -208,18 +211,7 @@ $("document").ready(function () {
                         </legend>
                         <div class='govgr-radios' id='radios-${currentQuestion}'>
                             <ul>
-                                ${question.options
-                                  .map(
-                                    (option, index) => `
-                                    <div class='govgr-radios__item'>
-                                        <label class='govgr-label govgr-radios__label'>
-                                            ${option.text}
-                                            <input class='govgr-radios__input' type='radio' name='question-option' value='${option.text}' />
-                                        </label>
-                                    </div>
-                                `
-                                  )
-                                  .join("")}
+                                ${optionsHTML}
                             </ul>
                         </div>
                     </fieldset>
@@ -241,19 +233,7 @@ $("document").ready(function () {
                             <span class='govgr-visually-hidden language-component' data-component='errorAn'>Λάθος:</span>
                             <span class='language-component' data-component='choose'>Πρέπει να επιλέξετε μια απάντηση</span>
                         </p>
-                        
-                            ${question.options
-                              .map(
-                                (option, index) => `
-                                <div class='govgr-radios__item'>
-                                    <label class='govgr-label govgr-radios__label'>
-                                        ${option.text}
-                                        <input class='govgr-radios__input' type='radio' name='question-option' value='${option.text}' />
-                                    </label>
-                                </div>
-                            `
-                              )
-                              .join("")}
+                            ${optionsHTML}
                     </div>
                 </fieldset>
             </div>
@@ -267,13 +247,10 @@ $("document").ready(function () {
         //oneAnswer: "You can choose only one option.",
         //errorAn: "Error:",
         //choose: "You must choose one option"
-        var components = Array.from(
-          questionElement.querySelectorAll(".language-component")
-        );
+        var components = Array.from(questionElement.querySelectorAll(".language-component"));
         components.slice(-4).forEach(function (component) {
           var componentName = component.dataset.component;
-          component.textContent =
-            languageContent[currentLanguage][componentName];
+          component.textContent = languageContent[currentLanguage][componentName];
         });
       }
     }
@@ -307,10 +284,10 @@ $("document").ready(function () {
     getEvidencesById(1);
     for (var i = 0; i < totalQuestions; i++) {
       var answer = sessionStorage.getItem("answer_" + i);
-      allAnswers.push(answer+1);
+      allAnswers.push(answer + 1);
     }
     console.log(allAnswers);
-    
+
     if (allAnswers[0] === "2") {
       getEvidencesById(9);
     }
@@ -324,10 +301,7 @@ $("document").ready(function () {
     } else if (allAnswers[4] === "3") {
       getEvidencesById(8);
     }
-    if (
-      allAnswers[5] === "1" ||
-      (allAnswers[5] === "2")
-    ) {
+    if (allAnswers[5] === "1" || allAnswers[5] === "2") {
       getEvidencesById(10);
       currentLanguage === "el"
         ? setResult("Δικαιούται και ο συνοδός το ίδιο δελτίο μετακίνησης.")
@@ -344,12 +318,10 @@ $("document").ready(function () {
     if (allAnswers[7] === "1") {
       getEvidencesById(12);
       currentLanguage === "el"
-      ? setResult(
-          "Δικαιούστε έκπτωση 50% για τις εκτός ορίων της περιφέρειας σας μετακινήσεις με υπεραστικά ΚΤΕΛ."
-        )
-      : setResult(
-          "You are entitled to a 50% discount for transportation outside the boundaries of your region with long-distance bus services (named KTEL)."
-        );
+        ? setResult("Δικαιούστε έκπτωση 50% για τις εκτός ορίων της περιφέρειας σας μετακινήσεις με υπεραστικά ΚΤΕΛ.")
+        : setResult(
+            "You are entitled to a 50% discount for transportation outside the boundaries of your region with long-distance bus services (named KTEL)."
+          );
     } else if (allAnswers[7] === "2" && allAnswers[5] !== "1") {
       getEvidencesById(2);
       if (allAnswers[8] === "1") {
@@ -362,35 +334,29 @@ $("document").ready(function () {
             );
       } else if (allAnswers[8] === "2") {
         currentLanguage === "el"
-          ? setResult(
-              "Δικαιούσαι έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
-            )
+          ? setResult("Δικαιούσαι έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ.")
           : setResult(
               "You are entitled to a 50% discount for transportation outside the boundaries of your region with long-distance bus services (named KTEL)."
             );
       }
-    }
-    else if(allAnswers[7] === "2" && allAnswers[5] === "1"){
+    } else if (allAnswers[7] === "2" && allAnswers[5] === "1") {
       currentLanguage === "el"
-      ? setResult(
-          "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
-        )
-      : setResult(
-          "You are entitled to free transportation with the urban public bus of your region and a 50% discount for transportation outside the boundaries of your region with long-distance (intercity) bus services (named KTEL)."
-        );
+        ? setResult(
+            "Δικαιούσαι δωρεάν μετακίνησης με τα αστικά μέσα συγκοινωνίας της περιφέρειας σου και έκπτωση 50% για τις εκτός ορίων της περιφέρειας σου μετακινήσεις με υπεραστικά ΚΤΕΛ."
+          )
+        : setResult(
+            "You are entitled to free transportation with the urban public bus of your region and a 50% discount for transportation outside the boundaries of your region with long-distance (intercity) bus services (named KTEL)."
+          );
     }
   }
 
   function submitForm() {
     const resultWrapper = document.createElement("div");
-    const titleText =
-      currentLanguage === "el"
-        ? "Είστε δικαιούχος!"
-        : "You are eligible!";
+    const titleText = currentLanguage === "el" ? "Είστε δικαιούχος!" : "You are eligible!";
     resultWrapper.innerHTML = `<h1 class='answer'>${titleText}</h1>`;
     resultWrapper.setAttribute("id", "resultWrapper");
     $(".question-container").html(resultWrapper);
-    
+
     const evidenceListElement = document.createElement("ol");
     evidenceListElement.setAttribute("id", "evidences");
     currentLanguage === "el"
@@ -408,20 +374,14 @@ $("document").ready(function () {
 
   $("#nextQuestion").click(function () {
     if ($(".govgr-radios__input").is(":checked")) {
-      let selectedOptionIndex =
-        $('input[name="question-option"]').index(
-          $('input[name="question-option"]:checked')
-        );
+      let selectedOptionIndex = $('input[name="question-option"]').index($('input[name="question-option"]:checked'));
 
       if ("skipToEnd" in all_questions[questionIds[currentQuestion]].options[selectedOptionIndex]) {
         skipToEnd(all_questions[questionIds[currentQuestion]].options[selectedOptionIndex].skipToEnd);
       } else {
         //save selectedOptionIndex to the storage
         userAnswers[currentQuestion] = selectedOptionIndex;
-        sessionStorage.setItem(
-          "answer_" + currentQuestion,
-          selectedOptionIndex
-        ); // save answer to session storage
+        sessionStorage.setItem("answer_" + currentQuestion, selectedOptionIndex); // save answer to session storage
 
         //if the questions are finished then...
         if (currentQuestion + 1 == totalQuestions) {
@@ -433,9 +393,7 @@ $("document").ready(function () {
           loadQuestion(true);
 
           if (currentQuestion + 1 == totalQuestions) {
-            currentLanguage === "el"
-              ? $(this).text("Υποβολή")
-              : $(this).text("Submit");
+            currentLanguage === "el" ? $(this).text("Υποβολή") : $(this).text("Submit");
           }
         }
       }
@@ -452,10 +410,7 @@ $("document").ready(function () {
       // Retrieve the answer for the previous question from userAnswers
       var answer = userAnswers[currentQuestion];
       if (answer) {
-        $('input[name="question-option"][value="' + answer + '"]').prop(
-          "checked",
-          true
-        );
+        $('input[name="question-option"][value="' + answer + '"]').prop("checked", true);
       }
     }
   });
@@ -464,8 +419,7 @@ $("document").ready(function () {
     toggleLanguage();
     loadFaqs();
     // if is false only when the user is skipedToEnd and trying change the language
-    if (currentQuestion >= 0 && currentQuestion < totalQuestions - 1)
-      loadQuestion(true);
+    if (currentQuestion >= 0 && currentQuestion < totalQuestions - 1) loadQuestion(true);
   });
 
   $("#questions-btns").hide();
@@ -474,7 +428,7 @@ $("document").ready(function () {
   getQuestions().then(() => {
     // Get all evidences
     getEvidences().then(() => {
-      // Get all faqs 
+      // Get all faqs
       getFaq().then(() => {
         // Code inside this block executes only after all data is fetched
         // load  faqs and the first question on page load
