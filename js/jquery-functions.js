@@ -2,7 +2,8 @@ $("document").ready(function () {
   var currentQuestion = 0;
   var totalQuestions = 0;
   var userAnswers = {};
-  var all_questions;
+  var all_questions = {};
+  var questionIds = [];
   var all_evidences;
   var all_evidences_en;
   var faq;
@@ -19,8 +20,11 @@ $("document").ready(function () {
     return fetch(`question-utils/all-questions-${currentLanguage}.json`)
       .then((response) => response.json())
       .then((data) => {
-        all_questions = data;
-        totalQuestions = data.length;
+        data.forEach((question) => {
+          all_questions[question.id] = question;
+          questionIds.push(question.id);
+        });
+        totalQuestions = questionIds.length;
       })
       .catch((error) => {
         console.error(`Failed to fetch all-questions-${currentLanguage}.json:`, error);
@@ -183,14 +187,14 @@ $("document").ready(function () {
 
 
   //Εachtime back/next buttons are pressed the form loads a question
-  function loadQuestion(questionId, noError) {
+  function loadQuestion(noError) {
     
     $("#nextQuestion").show();
     if (currentQuestion > 0) {
       $("#backButton").show();
     } 
 
-    question = all_questions[questionId];
+    question = all_questions[questionIds[currentQuestion]];
 
     var questionElement = document.createElement("div");
 
@@ -202,7 +206,7 @@ $("document").ready(function () {
                         <legend role='heading' aria-level='1' class='govgr-fieldset__legend govgr-heading-l'>
                             ${question.question}
                         </legend>
-                        <div class='govgr-radios' id='radios-${questionId}'>
+                        <div class='govgr-radios' id='radios-${currentQuestion}'>
                             <ul>
                                 ${question.options
                                   .map(
@@ -232,7 +236,7 @@ $("document").ready(function () {
                         Επιλέξτε την απάντησή σας
                     </legend>
                     <p class='govgr-hint language-component' data-component='oneAnswer'>Μπορείτε να επιλέξετε μόνο μία επιλογή.</p>
-                    <div class='govgr-radios id='radios-${questionId}'>
+                    <div class='govgr-radios id='radios-${currentQuestion}'>
                         <p class='govgr-error-message'>
                             <span class='govgr-visually-hidden language-component' data-component='errorAn'>Λάθος:</span>
                             <span class='language-component' data-component='choose'>Πρέπει να επιλέξετε μια απάντηση</span>
@@ -409,8 +413,8 @@ $("document").ready(function () {
           $('input[name="question-option"]:checked')
         );
 
-      if ("skipToEnd" in all_questions[currentQuestion].options[selectedOptionIndex]) {
-        skipToEnd(all_questions[currentQuestion].options[selectedOptionIndex].skipToEnd);
+      if ("skipToEnd" in all_questions[questionIds[currentQuestion]].options[selectedOptionIndex]) {
+        skipToEnd(all_questions[questionIds[currentQuestion]].options[selectedOptionIndex].skipToEnd);
       } else {
         //save selectedOptionIndex to the storage
         userAnswers[currentQuestion] = selectedOptionIndex;
@@ -426,7 +430,7 @@ $("document").ready(function () {
         // otherwise...
         else {
           currentQuestion++;
-          loadQuestion(currentQuestion, true);
+          loadQuestion(true);
 
           if (currentQuestion + 1 == totalQuestions) {
             currentLanguage === "el"
@@ -436,14 +440,14 @@ $("document").ready(function () {
         }
       }
     } else {
-      loadQuestion(currentQuestion, false);
+      loadQuestion(false);
     }
   });
 
   $("#backButton").click(function () {
     if (currentQuestion > 0) {
       currentQuestion--;
-      loadQuestion(currentQuestion, true);
+      loadQuestion(true);
 
       // Retrieve the answer for the previous question from userAnswers
       var answer = userAnswers[currentQuestion];
@@ -461,7 +465,7 @@ $("document").ready(function () {
     loadFaqs();
     // if is false only when the user is skipedToEnd and trying change the language
     if (currentQuestion >= 0 && currentQuestion < totalQuestions - 1)
-      loadQuestion(currentQuestion, true);
+      loadQuestion(true);
   });
 
   $("#questions-btns").hide();
@@ -476,7 +480,7 @@ $("document").ready(function () {
         // load  faqs and the first question on page load
         loadFaqs();
         $("#faqContainer").show();
-        loadQuestion(currentQuestion, true);
+        loadQuestion(true);
       });
     });
   });
