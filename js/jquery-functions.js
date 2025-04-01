@@ -1,11 +1,12 @@
-var currentQuestion = 0;
-var totalQuestions = 0;
-var userAnswers = {};
-var all_questions = {};
-var questionIds = [];
-var all_evidences;
-var faq;
-var texts = {};
+let currentQuestion = 0;
+let totalQuestions = 0;
+let userAnswers = {};
+let all_questions = {};
+let questionIds = [];
+let questionsOrder = [];
+let all_evidences;
+let faq;
+let navigationHistory = [];
 
 //hide the form buttons when its necessary
 function hideFormBtns() {
@@ -13,22 +14,13 @@ function hideFormBtns() {
   $("#backButton").hide();
 }
 
-function getTexts() {
-  return fetch(`question-utils/texts-${currentLanguage}.json`)
-    .then((response) => response.json())
-    .then((data) => {
-      texts = data;
-    })
-    .catch((error) => {
-      showFileFetchError(`texts-${currentLanguage}.json`, error);
-    });
-}
-
 //Once the form begins, the questions' data and length are fetched.
 function getQuestions() {
   return fetch(`question-utils/all-questions-${currentLanguage}.json`)
     .then((response) => response.json())
     .then((data) => {
+      all_questions = {};
+      questionIds = [];
       data.forEach((question) => {
         all_questions[question.id] = question;
         questionIds.push(question.id);
@@ -53,17 +45,6 @@ function getEvidences() {
     });
 }
 
-async function getResultMessages() {
-  try {
-    const response = await fetch(`question-utils/result-messages-${currentLanguage}.json`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    showFileFetchError(`result-messages-${currentLanguage}.json`, error);
-  }
-}
-
-//Once the form begins, the faqs' data is fetched.
 function getFaq() {
   return fetch(`question-utils/faq-${currentLanguage}.json`)
     .then((response) => response.json())
@@ -74,6 +55,16 @@ function getFaq() {
     .catch((error) => {
       showFileFetchError(`faq-${currentLanguage}.json`, error, false);
     });
+}
+
+async function getResultMessages() {
+  try {
+    const response = await fetch(`question-utils/result-messages-${currentLanguage}.json`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    showFileFetchError(`result-messages-${currentLanguage}.json`, error);
+  }
 }
 
 function showFileFetchError(fileName, error, hideBtns = true) {
@@ -98,7 +89,7 @@ function loadFaqs() {
 
   faqElement.innerHTML = `
         <div class="govgr-heading-m language-component" data-component="faq" tabIndex="15">
-          ${texts.faqTitle}
+          ${languageContent[currentLanguage].faqTitle}
         </div>
     `;
 
@@ -132,7 +123,10 @@ function loadFaqs() {
 
 // get the url from faqs and link it
 function convertURLsToLinks(text) {
-  return text.replace(/https:\/\/www\.gov\.gr\/[\S]+/g, '<a href="$&" target="_blank">' + "myKEPlive" + "</a>" + ".");
+  const urlRegex = /(\bhttps?:\/\/[^\s<>"]+[^\s.,!?<>")\]])/gi;
+  return text.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
 }
 
 //Εachtime back/next buttons are pressed the form loads a question
@@ -222,7 +216,7 @@ function skipToEnd(message) {
   currentQuestion = -1;
   const errorEnd = document.createElement("h5");
   errorEnd.className = "govgr-error-summary";
-  errorEnd.textContent = texts.rejectionMessage + " " + message;
+  errorEnd.textContent = languageContent[currentLanguage].rejectionMessage + " " + message;
   $(".question-container").html(errorEnd);
   hideFormBtns();
 }
@@ -240,6 +234,7 @@ function conditionsAreMet(item, allAnswers) {
   return item.conditions.some((group) =>
     group.every((condition) => {
       const userAnswer = allAnswers[condition.question];
+      if (userAnswer === undefined) return false; // Skip if the answer is not found
       const matches = condition.answer.includes(userAnswer);
       return condition.should ? matches : !matches;
     })
@@ -249,12 +244,10 @@ function conditionsAreMet(item, allAnswers) {
 function collectResults() {
   let allAnswers = {};
 
-  questionIds.forEach((questionId) => {
-    let optionIndex = sessionStorage.getItem(questionId);
-    allAnswers[questionId] = parseInt(optionIndex);
+  Object.entries(userAnswers).forEach(([questionIndex, optionIndex]) => {
+    allAnswers[questionIds[questionIndex]] = parseInt(optionIndex);
   });
-  console.log(allAnswers);
-
+  
   collectEvidences(allAnswers);
   collectResultMessages(allAnswers);
 }
@@ -278,34 +271,53 @@ async function collectResultMessages(allAnswers) {
 
 function submitForm() {
   const resultWrapper = document.createElement("div");
-  resultWrapper.innerHTML = `<h1 class='answer'>${texts.eligibleMessage}</h1>`;
+  resultWrapper.innerHTML = `<h1 class='answer'>${languageContent[currentLanguage].eligibleMessage}</h1>`;
   resultWrapper.setAttribute("id", "resultWrapper");
   $(".question-container").html(resultWrapper);
 
   const evidenceListElement = document.createElement("ol");
   evidenceListElement.setAttribute("id", "evidences");
-  $(".question-container").append(`<br /><br /><h5 class='answer'>${texts.evidencesTitle}</h5><br />`);
+  $(".question-container").append(
+    `<br /><br /><h5 class='answer'>${languageContent[currentLanguage].evidencesTitle}</h5><br />`
+  );
   $(".question-container").append(evidenceListElement);
   $("#faqContainer").load("faq.html");
   collectResults();
   hideFormBtns();
 }
 
+function changeCurrentQuestion(newQuestionIndex, isFromBackButton = false) {
+  currentQuestion = newQuestionIndex;
+
+  if (currentQuestion + 1 == totalQuestions) {
+    $("#nextQuestion").text(languageContent[currentLanguage].submit);
+  } else if (isFromBackButton) {
+    $("#nextQuestion").text(languageContent[currentLanguage].nextQuestion);
+  }
+
+  loadQuestion(true);
+
+  if (isFromBackButton) {
+    // Restore previously selected answer
+    let answer = userAnswers[currentQuestion];
+    if (answer > -1) {
+      $('input[name="question-option"]').eq(answer).prop("checked", true);
+    }
+  }
+}
+
 function start() {
-  // Get text
-  getTexts().then(() => {
-    // Get all questions
-    getQuestions().then(() => {
-      // Get all evidences
-      getEvidences().then(() => {
-        // Get all faqs
-        getFaq().then(() => {
-          // Code inside this block executes only after all data is fetched
-          // load  faqs and the first question on page load
-          loadFaqs();
-          $("#faqContainer").show();
-          loadQuestion(true);
-        });
+  // Get all questions
+  getQuestions().then(() => {
+    // Get all evidences
+    getEvidences().then(() => {
+      // Get all faqs
+      getFaq().then(() => {
+        // Code inside this block executes only after all data is fetched
+        // load  faqs and the first question on page load
+        loadFaqs();
+        $("#faqContainer").show();
+        loadQuestion(true);
       });
     });
   });
@@ -321,26 +333,31 @@ $("document").ready(function () {
   $("#nextQuestion").click(function () {
     if ($(".govgr-radios__input").is(":checked")) {
       let selectedOptionIndex = $('input[name="question-option"]').index($('input[name="question-option"]:checked'));
+      let selectedOption = all_questions[questionIds[currentQuestion]].options[selectedOptionIndex];
 
-      if ("skipToEnd" in all_questions[questionIds[currentQuestion]].options[selectedOptionIndex]) {
-        skipToEnd(all_questions[questionIds[currentQuestion]].options[selectedOptionIndex].skipToEnd);
+      if ("skipToEnd" in selectedOption) {
+        skipToEnd(selectedOption.skipToEnd);
       } else {
         //save selectedOptionIndex to the storage
         userAnswers[currentQuestion] = selectedOptionIndex;
-        sessionStorage.setItem(questionIds[currentQuestion], selectedOptionIndex); // save answer to session storage
+        navigationHistory.push(currentQuestion);
+
+        // Handle jumpTo
+        if ("jumpTo" in selectedOption) {
+          let targetIndex = questionIds.indexOf(selectedOption.jumpTo);
+          if (targetIndex !== -1) {
+            changeCurrentQuestion(targetIndex);
+            return;
+          } else {
+            console.warn(`question in jumpTo was not found`);
+          }
+        }
 
         //if the questions are finished then...
         if (currentQuestion + 1 == totalQuestions) {
           submitForm();
-        }
-        // otherwise...
-        else {
-          currentQuestion++;
-          loadQuestion(true);
-
-          if (currentQuestion + 1 == totalQuestions) {
-            $(this).text(texts.submit);
-          }
+        } else {
+          changeCurrentQuestion(currentQuestion + 1);
         }
       }
     } else {
@@ -349,15 +366,8 @@ $("document").ready(function () {
   });
 
   $("#backButton").click(function () {
-    if (currentQuestion > 0) {
-      currentQuestion--;
-      loadQuestion(true);
-
-      // Retrieve the answer for the previous question from userAnswers
-      let answer = userAnswers[currentQuestion];
-      if (answer > -1) {
-        $('input[name="question-option"]').eq(answer).prop("checked", true);
-      }
+    if (navigationHistory.length > 0) {
+      changeCurrentQuestion(navigationHistory.pop(), true);
     }
   });
 
