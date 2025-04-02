@@ -62,10 +62,10 @@ var languageContent = {
 
 // Retrieve the selected language from localStorage or set default to "el"
 var currentLanguage = "el";
-let storedLang = localStorage.getItem("preferredLanguage");
-if (storedLang && languageContent[storedLang]) {
-  currentLanguage = storedLang;
-}
+// let storedLang = localStorage.getItem("preferredLanguage");
+// if (storedLang && languageContent[storedLang]) {
+//   currentLanguage = storedLang;
+// }
 localStorage.setItem("preferredLanguage", currentLanguage);
 
 function toggleLanguage() {
